@@ -15,28 +15,53 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
         .btn-action:active { transform: scale(0.95); }
+        /* Custom scrollbar for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
     </style>
 </head>
 <body class="bg-slate-50">
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useRef, useEffect } = React;
+        const { useState, useRef, useEffect, useMemo } = React;
         
         // Lucide Icon Component Wrapper
         const Icon = ({ name, size = 18, className = "" }) => {
-            const [iconHtml, setIconHtml] = useState("");
+            const iconRef = useRef(null);
+            
             useEffect(() => {
-                if (window.lucide) {
-                    const icon = window.lucide.icons[name];
-                    if (icon) {
-                        setIconHtml(icon.toSvg({ size, class: className }));
+                if (window.lucide && window.lucide.icons[name]) {
+                    const iconElement = window.lucide.icons[name].toSvg({
+                        size: size,
+                        class: className
+                    });
+                    if (iconRef.current) {
+                        iconRef.current.innerHTML = iconElement;
                     }
                 }
             }, [name, size, className]);
-            return <span dangerouslySetInnerHTML={{ __html: iconHtml }} className="inline-flex items-center justify-center" />;
+
+            return <span ref={iconRef} className="inline-flex items-center justify-center" />;
         };
 
         const App = () => {
@@ -80,12 +105,14 @@
             // 연결 모드 상태
             const [connectionSource, setConnectionSource] = useState(null);
 
-            const currentProject = projects.find(p => p.id === currentProjectId) || null;
+            const currentProject = useMemo(() => 
+                projects.find(p => p.id === currentProjectId) || null
+            , [projects, currentProjectId]);
 
             // 곡선 경로 계산 함수 (Bezier Curve)
             const getCurvePath = (startX, startY, endX, endY) => {
                 const width = Math.abs(endX - startX);
-                const horizontalOffset = Math.max(width / 2, 40); // 최소 곡률 보장
+                const horizontalOffset = Math.max(width / 2, 40);
                 return `M ${startX} ${startY} C ${startX + horizontalOffset} ${startY}, ${endX - horizontalOffset} ${endY}, ${endX} ${endY}`;
             };
 
